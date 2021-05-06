@@ -17,5 +17,7 @@ Options
 ```
 
 Arguments
+```
 URL
         The URL of the website on which to perform SQLi vulnerability scan
+```

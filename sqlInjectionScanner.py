@@ -1,5 +1,7 @@
 import requests
 import re
+import sys
+import validators
 from bs4 import BeautifulSoup as bs
 from urllib.parse import urljoin
 from pprint import pprint
@@ -15,8 +17,12 @@ s.headers["User-Agent"] = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit
 xmlDoc = minidom.parse('errors.xml')
 dbErrors = xmlDoc.getElementsByTagName('error')
 
-DVWA_URL = 'http://localhost/dvwa/vulnerabilities/sqli/'
-DVWA_LOGIN_URL = 'http://localhost/dvwa/login.php'
+# URL = 'http://localhost/dvwa/vulnerabilities/sqli/'
+URL = sys.argv[1]
+
+#DVWA_LOGIN_URL = 'http://localhost/dvwa/login.php'
+LOGIN_URL = ''
+login_failure = False
 
 # logging in
 login_payload = {
@@ -24,15 +30,64 @@ login_payload = {
     "password": "password",
     "Login": "Login",
 }
-r = s.get(DVWA_LOGIN_URL)
-token = re.search("user_token'\s*value='(.*?)'", r.text).group(1)
-login_payload['user_token'] = token
-s.post(DVWA_LOGIN_URL, data=login_payload)
-
+# r = s.get(LOGIN_URL)
+# token = re.search("user_token'\s*value='(.*?)'", r.text).group(1)
+# login_payload['user_token'] = token
+# s.post(LOGIN_URL, data=login_payload)
 
 def get_all_forms(url):
     soup = bs(s.get(url).content, 'html.parser')
     return soup.find_all('form')
+
+def get_login_information():
+    login_url = input('Provide login URL (if not required leave empty): ')
+    login_url_validation = validators.url(login_url)
+
+    if login_url == '':
+        return True
+    if not login_url_validation:        
+        print('[!] Provided login URL is invalid. Exiting.')
+        return False
+    else:
+        LOGIN_URL = login_url
+
+    login_forms = get_all_forms(login_url)
+    login_forms_details = {}
+    username_input = False
+    password_input = False
+
+    for form in login_forms:
+        login_forms_details = get_form_details(form)
+
+        for input_tag in login_forms_details["inputs"]:
+            if input_tag['name'] == 'username':
+                username_input = True
+                print('-- username input detected')
+                username = input('Username: ')
+
+            if input_tag['name'] == 'password':
+                password_input = True
+                print('-- password input detected')
+                password = input('Password: ')
+
+    login_payload['username'] = username
+    login_payload['password'] = password
+
+    r = s.get(login_url)
+    token = re.search("user_token'\s*value='(.*?)'", r.text).group(1)
+    login_payload['user_token'] = token
+    login_res = s.post(login_url, data=login_payload)
+    #print('LOGIN_URL: ' + LOGIN_URL)
+    
+    if login_res.url == LOGIN_URL:
+        print('[!] Login failed.')
+        print('[-] Continuing ...')
+        login_failure = True
+        return True
+
+    print('[+] Login successful!')
+
+    return True
 
 def get_form_details(form):
     details = {}
@@ -128,8 +183,29 @@ def scan_sql_injection(url):
                 pprint(form_details)
                 break
 
-if __name__ == "__main__":    
-    scan_sql_injection(DVWA_URL)
+if sys.argv[1] == '-h' or sys.argv[1] == '--help':
+    print('')
+    print('python sqlInjectionScanner.py - scans the website of a given URL for SQLi vulnerabilities.')
+    print('')
+    print('Synopsis')
+    print('\tpython sqlInjectionScanner.py [OPTION] | [URL]')
+    print('')
+    print('Options')
+    print('-h --help\n\tHelp: Show syntax')
+    print('')
+    print('Arguments')
+    print('URL\n\tThe URL of the website on which to perform SQLi vulnerability scan')
+elif __name__ == "__main__":  
+    #try:  
+    login_res = get_login_information()
+    if login_res == True: 
+        print('MAIN_URL: ' + URL)
+        scan_sql_injection(URL)
+  
+    # except:
+    #     print('Login might be required')
+    #     get_login_information()
 
-# primiti bilo koji URL
+# TO DO:
+# primiti bilo koji URL croz cmd
 # 

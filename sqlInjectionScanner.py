@@ -101,7 +101,7 @@ def scan_sql_injection(url):
             data = {}
 
             for input_tag in form_details["inputs"]:
-                if (input_tag["type"] == "hidden" or input_tag["value"] or input_tag["value"] == '') and input_tag["type"] != 'submit':
+                if input_tag["type"] == "hidden" or input_tag["value"]:
                     # any input form that is hidden or has some value,
                     # just use it in the form body
                     try:
@@ -112,24 +112,17 @@ def scan_sql_injection(url):
                     # all others except submit, use some junk data with special character
                     data[input_tag["name"]] = f"test{c}"
 
-                if input_tag["type"] == "submit":
-                    data[input_tag["name"]] = input_tag["value"]
-
 
             # join the url with the action (form request URL)
             url = urljoin(url, form_details["action"])
 
-            form_response = ''
-
             if form_details["method"] == "post":
-                form_response = s.post(url, data=data)
-                #print(res.content.decode())
+                form_res = s.post(url, data=data)
             elif form_details["method"] == "get":
-                form_response = s.get(url, params=data)
-                #print(form_response.content.decode().lower())
+                form_res = s.get(url, params=data)
 
             # test whether the resulting page is vulnerable
-            if is_vulnerable(form_response):
+            if is_vulnerable(form_res):
                 print("[+] SQL Injection vulnerability detected, link:", url)
                 print("[+] Form:")
                 pprint(form_details)

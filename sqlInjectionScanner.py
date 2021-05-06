@@ -130,3 +130,6 @@ def scan_sql_injection(url):
 
 if __name__ == "__main__":    
     scan_sql_injection(DVWA_URL)
+
+# primiti bilo koji URL
+# 

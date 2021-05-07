@@ -18,6 +18,10 @@ xmlDoc = minidom.parse('errors.xml')
 dbErrors = xmlDoc.getElementsByTagName('error')
 
 # URL = 'http://localhost/dvwa/vulnerabilities/sqli/'
+if len(sys.argv) == 1:
+    print('[!] No option or URL provided. Exiting.')
+    exit()
+
 URL = sys.argv[1]
 
 #DVWA_LOGIN_URL = 'http://localhost/dvwa/login.php'
@@ -30,10 +34,21 @@ login_payload = {
     "password": "password",
     "Login": "Login",
 }
+
 # r = s.get(LOGIN_URL)
 # token = re.search("user_token'\s*value='(.*?)'", r.text).group(1)
 # login_payload['user_token'] = token
 # s.post(LOGIN_URL, data=login_payload)
+
+class User:
+    def __init__(self, username, password, user_token):
+        self.username = username
+        self.password = password
+        self.user_token = user_token
+    
+    def __str__(self):
+        return '[-] User:\n\tusername: {}\n\tpassword: {}\n\tuser_token: {}'.format(self.username, self.password, self.user_token)
+
 
 def get_all_forms(url):
     soup = bs(s.get(url).content, 'html.parser')
@@ -85,7 +100,9 @@ def get_login_information():
         login_failure = True
         return True
 
+    user = User(login_payload['username'], login_payload['password'], login_payload['user_token'])
     print('[+] Login successful!')
+    print('[+] Logging in as user:\n' + str(user))
 
     return True
 

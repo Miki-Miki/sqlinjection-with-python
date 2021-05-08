@@ -7,7 +7,7 @@ python sqlInjectionScanner.py - scans the website of a given URL for SQLi vulner
 
 Synopsis
 ```
-python sqlInjectionScanner.py [OPTION] | [URL]
+python sqlInjectionScanner.py [OPTION] | URL
 ```
 
 Options
